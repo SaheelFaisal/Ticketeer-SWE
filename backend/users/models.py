@@ -30,13 +30,15 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     email = models.EmailField(unique=True)
     first_name = models.CharField(max_length=150)
     last_name = models.CharField(max_length=150)
+    home_address = models.CharField(max_length=255, default='N/A')
+    phone_number = models.CharField(max_length=15, default='0000000000')
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
 
     objects = UserManager()
 
     USERNAME_FIELD = 'email'
-    REQUIRED_FIELDS = ['first_name', 'last_name']
+    REQUIRED_FIELDS = ['first_name', 'last_name', 'home_address', 'phone_number']
 
     def __str__(self):
         return self.email
