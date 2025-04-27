@@ -6,7 +6,7 @@ class Theatre(models.Model):
     location = models.CharField(max_length=100)
 
     def __str__(self):
-        return f"{self.name} ({self.location})"
+        return f"{self.name} - ({self.location})"
 
 class Show(models.Model):
     theatre = models.ForeignKey(Theatre, on_delete=models.CASCADE)

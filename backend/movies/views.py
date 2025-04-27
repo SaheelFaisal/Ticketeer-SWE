@@ -1,7 +1,7 @@
 from rest_framework import generics
 from .models import Movie, Review
 from .serializers import MovieSerializer, ReviewSerializer
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from django.shortcuts import get_object_or_404
 
 
@@ -9,6 +9,7 @@ from django.shortcuts import get_object_or_404
 class MovieListCreateAPIView(generics.ListCreateAPIView):
     queryset = Movie.objects.all()
     serializer_class = MovieSerializer
+    permission_classes = [IsAdminUser]
 
 class MovieListView(generics.ListAPIView):
     queryset = Movie.objects.all()
