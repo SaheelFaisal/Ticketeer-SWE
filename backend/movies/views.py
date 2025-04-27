@@ -1,8 +1,10 @@
-from rest_framework import generics
+from rest_framework import generics, status
 from .models import Movie, Review
 from .serializers import MovieSerializer, ReviewSerializer
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
+from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
+from .tmdb_utils import fetch_movie_from_tmdb
 
 
 # Movie
@@ -10,6 +12,40 @@ class MovieListCreateAPIView(generics.ListCreateAPIView):
     queryset = Movie.objects.all()
     serializer_class = MovieSerializer
     permission_classes = [IsAdminUser]
+
+    def create(self, request, *args, **kwargs):
+        tmdb_id = request.data.get('tmdb_id')
+
+        if not tmdb_id:
+            return Response({"error": "TMDb ID is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        movie_data = fetch_movie_from_tmdb(tmdb_id)
+
+        if not movie_data:
+            return Response({"error": "Could not fetch movie from TMDb."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Build the poster and backdrop URLs
+        poster_path = movie_data.get('poster_path')
+        backdrop_path = movie_data.get('backdrop_path')
+
+        poster_url = f"https://image.tmdb.org/t/p/w500{poster_path}" if poster_path else None
+        backdrop_url = f"https://image.tmdb.org/t/p/w500{backdrop_path}" if backdrop_path else None
+
+        # Create the movie instance
+        movie = Movie.objects.create(
+            tmdb_id=tmdb_id,
+            title=movie_data.get('title'),
+            overview=movie_data.get('overview'),
+            release_date=movie_data.get('release_date'),
+            runtime=movie_data.get('runtime'),
+            rating=movie_data.get('vote_average'),
+            vote_count=movie_data.get('vote_count'),
+            poster_url=poster_url,
+            backdrop_url=backdrop_url
+        )
+
+        serializer = self.get_serializer(movie)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 class MovieListView(generics.ListAPIView):
     queryset = Movie.objects.all()
@@ -21,28 +57,18 @@ class MovieDetailView(generics.RetrieveAPIView):
     lookup_field = 'id'
 
 # Review
-class ReviewListCreateAPIView(generics.ListCreateAPIView):
-    # This will allow users to view and create reviews for a particular movie
+class ReviewListAPIView(generics.ListAPIView):
     serializer_class = ReviewSerializer
-    permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        # Filter reviews by movie (to display reviews for a specific movie)
-        movie_id = self.kwargs.get('movie_id')
-        return Review.objects.filter(movie__id=movie_id)
-    
-    def get_movie(self):
-        # Retrieve the movie based on the 'movie_id' URL parameter
         movie_id = self.kwargs['movie_id']
-        return get_object_or_404(Movie, id=movie_id)
+        return Review.objects.filter(movie_id=movie_id)
 
-    def perform_create(self, serializer):
-        # Add the user automatically to the review when creating it
-        movie = self.get_movie()
-        serializer.save(movie=movie, user=self.request.user)
-
-class ReviewDetailAPIView(generics.RetrieveUpdateDestroyAPIView):
-    queryset = Review.objects.all()
+class ReviewCreateAPIView(generics.CreateAPIView):
     serializer_class = ReviewSerializer
     permission_classes = [IsAuthenticated]
-    lookup_field = 'id'
+
+    def perform_create(self, serializer):
+        movie_id = self.kwargs['movie_id']
+        movie = Movie.objects.get(id=movie_id)
+        serializer.save(user=self.request.user, movie=movie)
