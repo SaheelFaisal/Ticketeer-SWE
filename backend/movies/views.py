@@ -3,12 +3,11 @@ from .models import Movie, Review
 from .serializers import MovieSerializer, ReviewSerializer
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
-from django.shortcuts import get_object_or_404
 from .tmdb_utils import fetch_movie_from_tmdb
 
 
 # Movie
-class MovieListCreateAPIView(generics.ListCreateAPIView):
+class MovieCreateAPIView(generics.CreateAPIView):
     queryset = Movie.objects.all()
     serializer_class = MovieSerializer
     permission_classes = [IsAdminUser]
@@ -19,6 +18,11 @@ class MovieListCreateAPIView(generics.ListCreateAPIView):
         if not tmdb_id:
             return Response({"error": "TMDb ID is required."}, status=status.HTTP_400_BAD_REQUEST)
 
+        # Check if movie with the given TMDb ID already exists
+        if Movie.objects.filter(tmdb_id=tmdb_id).exists():
+            return Response({"error": "Movie with this TMDb ID already exists."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Fetch movie data from TMDb API
         movie_data = fetch_movie_from_tmdb(tmdb_id)
 
         if not movie_data:
@@ -55,6 +59,7 @@ class MovieDetailView(generics.RetrieveAPIView):
     queryset = Movie.objects.all()
     serializer_class = MovieSerializer
     lookup_field = 'id'
+
 
 # Review
 class ReviewListAPIView(generics.ListAPIView):

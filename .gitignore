@@ -2,3 +2,4 @@ venv/
 *.db
 *.pyc
 *.sqlite3
+*.env
