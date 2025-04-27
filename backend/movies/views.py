@@ -3,7 +3,7 @@ from .models import Movie, Review
 from .serializers import MovieSerializer, ReviewSerializer
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
-from .tmdb_utils import fetch_movie_from_tmdb
+from .tmdb_utils import get_movie_details
 
 
 # Movie
@@ -22,34 +22,31 @@ class MovieCreateAPIView(generics.CreateAPIView):
         if Movie.objects.filter(tmdb_id=tmdb_id).exists():
             return Response({"error": "Movie with this TMDb ID already exists."}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Fetch movie data from TMDb API
-        movie_data = fetch_movie_from_tmdb(tmdb_id)
+        # Fetch movie details using the new function
+        movie_details = get_movie_details(tmdb_id)
 
-        if not movie_data:
-            return Response({"error": "Could not fetch movie from TMDb."}, status=status.HTTP_400_BAD_REQUEST)
-
-        # Build the poster and backdrop URLs
-        poster_path = movie_data.get('poster_path')
-        backdrop_path = movie_data.get('backdrop_path')
-
-        poster_url = f"https://image.tmdb.org/t/p/w500{poster_path}" if poster_path else None
-        backdrop_url = f"https://image.tmdb.org/t/p/w500{backdrop_path}" if backdrop_path else None
+        if not movie_details:
+            return Response({"error": "Could not fetch movie details from TMDb."}, status=status.HTTP_400_BAD_REQUEST)
 
         # Create the movie instance
         movie = Movie.objects.create(
             tmdb_id=tmdb_id,
-            title=movie_data.get('title'),
-            overview=movie_data.get('overview'),
-            release_date=movie_data.get('release_date'),
-            runtime=movie_data.get('runtime'),
-            rating=movie_data.get('vote_average'),
-            vote_count=movie_data.get('vote_count'),
-            poster_url=poster_url,
-            backdrop_url=backdrop_url
+            title=movie_details['title'],
+            overview=movie_details['overview'],
+            release_date=movie_details['release_date'],
+            runtime=movie_details['runtime'],
+            rating=movie_details['vote_average'],
+            vote_count=movie_details['vote_count'],
+            poster_url=movie_details['poster_url'],
+            backdrop_url=movie_details['backdrop_url'],
+            genres=movie_details['genres'],
+            cast=movie_details['cast'],
         )
 
+        # Serialize and return the response
         serializer = self.get_serializer(movie)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
+
 
 class MovieListView(generics.ListAPIView):
     queryset = Movie.objects.all()
