@@ -3,3 +3,56 @@ venv/
 *.pyc
 *.sqlite3
 *.env
+
+
+# Node modules for frontend
+/frontend/node_modules/
+
+# Build output for frontend
+/frontend/build/
+/frontend/dist/
+
+# Dependency directories for frontend
+/frontend/npm-debug.log*
+/frontend/yarn-debug.log*
+/frontend/yarn-error.log*
+
+# dotenv environment variables file for frontend
+/frontend.env
+
+# IDE and editor configurations
+/.vscode/
+/.idea/
+/*.sublime-workspace
+/*.sublime-project
+
+# OS-specific files
+/.DS_Store
+/Thumbs.db
+
+# Log files
+/*.log
+
+# Local database files
+/*.sqlite
+
+# Coverage directory for testing in frontend
+/frontend/coverage/
+
+# React Native
+/expo/
+
+# Backend files
+/backend/node_modules/
+
+# Build output for backend (if applicable)
+/backend/build/
+/backend/dist/
+
+# Dependency directories for backend
+/backend/npm-debug.log*
+/backend/yarn-debug.log*
+/backend/yarn-error.log*
+
+# dotenv environment variables file for backend
+/backend.env
